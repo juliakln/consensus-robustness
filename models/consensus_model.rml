@@ -1,0 +1,33 @@
+ctmc
+
+            const int Zx = 0;
+            const int Zy = 0;
+            const int N = 100;
+
+            module cross_inhibition
+                
+                x : [0..N] init 50;
+                y : [0..N] init 50;
+                
+                [switch1] 	 (x>0) & (y>0) & (x<N)  -> x*y : (x'=x+1) & (y'=y-1);       // x+y -> x+x 
+                [switch2] 	 (x>0) & (y>0) & (y<N)  -> x*y : (x'=x-1) & (y'=y+1);       // x+y -> y+y
+                [zealotx]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
+                [dead1]      (x=0) -> (x'=x);
+                [dead2]      (y=0) -> (y'=y);
+
+            endmodule
+
+            // base rates
+            const double qx = 0.01; 
+            const double qy = 0.01; 
+
+            // module representing the base rates of reactions
+            module base_rates
+                
+                [switch1] true -> qx : true;
+                [switch2] true -> qy : true;
+                [zealotx] true -> qx : true;	
+                [zealoty] true -> qy : true;
+
+            endmodule

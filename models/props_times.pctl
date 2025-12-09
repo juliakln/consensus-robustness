@@ -1,0 +1,6 @@
+// Expected reaching time
+R{"reaching_time"}=? [ F ("x_wins"|"y_wins") ]
+
+// Expected holding time
+R{"holding_time"}=? [ F (("x_wins"|"y_wins")&((!("y_wins")|(F (!("y_wins"))))&(!("x_wins")|(F (!("x_wins")))))) ]
+
