@@ -599,3 +599,119 @@ def write_cc_model(N, ratex = 1.0, ratey = 1.0, ratet = 1.0):
         endmodule""")
 
     f.close()
+
+
+
+"""
+SLOWBYFAST 2-STATE MODEL
+    N: total population size
+    rater: rate for reactions between X and Y
+    ratek: rate for production of A and B
+    
+    Output: RML file model
+"""
+def write_slowbyfast_2_model(N, rater = 1.0, ratek = 10.0):
+
+    f = open(model, "w")
+    f.write("""ctmc
+
+        const int N = """ + str(N) + """;
+
+        module model
+            
+            x : [0..1] init 1;
+            y : [0..1] init 0;
+            a : [0..N] init """ + str(int(N/2)) + """;
+            b : [0..N] init """ + str(int(N/2)) + """;
+            
+            [r1] (x>0) & (y<N) -> x : (x'=x-1) & (y'=y+1);			// X->Y
+            [r2] (y>0) & (x<N) -> y : (y'=y-1) & (x'=x+1);			// Y->X
+            
+            [r3] (x>0) & (b>0) & (a<N) -> x*b : (b'=b-1) & (a'=a+1);	// B->A (in X)
+            [r4] (y>0) & (a>0) & (b<N) -> y*a : (a'=a-1) & (b'=b+1);	// A->B (in Y)
+
+        endmodule
+
+        // base rates
+        const double r = """ + str(rater) + """; 
+        const double k = """ + str(ratek) + """; 
+
+        // module representing the base rates of reactions
+        module base_rates
+            
+            [r1] true -> r : true;
+            [r2] true -> r : true;
+            [r3] true -> k : true;	
+            [r4] true -> k : true;
+
+
+        endmodule""")
+    f.close()
+
+
+
+"""
+SLOWBYFAST 4-STATE MODEL
+    N: total population size
+    rater: rate for reactions between X and Y
+    ratek: rate for production of A and B
+    rateback: backward rates from X to X' and Y to Y'
+    rateforw: forward rates from X' to X and Y' to Y
+    
+    Output: RML file model
+"""
+def write_slowbyfast_2_model(N, rater = 1.0, ratek = 10.0, rateback = 1.0, rateforw = 1.0):
+
+    f = open(model, "w")
+    f.write("""ctmc
+
+        const int N = """ + str(N) + """;
+
+        module model
+            
+            x : [0..1] init 1;
+            xp : [0..1] init 0;
+            y : [0..1] init 0;
+            yp : [0..1] init 0;
+            a : [0..N] init """ + str(int(N/2)) + """;
+            b : [0..N] init """ + str(int(N/2)) + """;
+            
+            [r1] (x>0) & (y<1) -> x : (x'=x-1) & (y'=y+1);			// X->Y
+            [r2] (y>0) & (x<1) -> y : (y'=y-1) & (x'=x+1);			// Y->X
+
+            [r3] (xp>0) & (x<1) -> xp : (xp'=xp-1) & (x'=x+1); 		// X' -> X
+            [r4] (x>0) & (xp<1) -> x : (x'=x-1) & (xp'=xp+1);		// X -> X'
+
+            [r5] (y>0) & (yp<1) -> y : (y'=y-1) & (yp'=yp+1); 		// Y -> Y'
+            [r6] (yp>0) & (y<1) -> yp : (yp'=yp-1) & (y'=y+1);		// Y' -> Y
+
+            [a1] (x>0) & (b>0) & (a<N) -> x*b : (b'=b-1) & (a'=a+1);	// B->A (in X)
+            [a2] (xp>0) & (b>0) & (a<N) -> xp*b : (b'=b-1) & (a'=a+1);	// B->A (in X')
+            [b1] (y>0) & (a>0) & (b<N) -> y*a : (a'=a-1) & (b'=b+1);	// A->B (in Y)
+            [b2] (yp>0) & (a>0) & (b<N) -> yp*a : (a'=a-1) & (b'=b+1);	// A->B (in Y')
+
+        endmodule
+
+        // base rates
+        const double r = """ + str(rater) + """; 
+        const double k = """ + str(ratek) + """; 
+        const double rback = """ + str(rateback) + """;
+        const double rforw = """ + str(rateforw) + """;
+
+        // module representing the base rates of reactions
+        module base_rates
+            
+            [r1] true -> r : true;
+            [r2] true -> r : true;
+            [r3] true -> rforw : true;
+            [r4] true -> rback : true;
+            [r5] true -> rback : true;
+            [r6] true -> rforw : true;
+
+            [a1] true -> k : true;
+            [a2] true -> k : true;
+            [b1] true -> k : true;
+            [b2] true -> k : true;
+
+        endmodule""")
+    f.close()
