@@ -210,3 +210,5 @@ __marimo__/
 # Generated result files
 PMC_results/
 SMC_results/
+models/consensus_model.rml
+models/consensus.bltl
