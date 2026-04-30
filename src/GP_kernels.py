@@ -140,3 +140,35 @@ def kernel_matern32(x, y, param):
     )
     sqrt3 = np.sqrt(3.0)
     return variance * (1.0 + sqrt3 * dists / ell) * np.exp(-sqrt3 * dists / ell)
+
+import numpy as np
+
+def kernel_matern32_3d(x, y, param):
+    """
+    Matérn 3/2 kernel supporting 3D inputs and ARD (Automatic Relevance Determination).
+    
+    Args:
+        x: (N, D) input array
+        y: (M, D) input array
+        param: dict containing 'var' (scalar) and 'ell' (scalar OR array of length D)
+    """
+    variance = param['var']
+    ell = np.array(param['ell'])
+
+    # ARD: Scale each dimension by its specific lengthscale before computing distance
+    # If ell is a scalar, this scales all dimensions equally (Isotropic)
+    # If ell is [ell1, ell2, ell3], it scales each axis independently
+    x_scaled = x / ell
+    y_scaled = y / ell
+
+    # Efficient squared Euclidean distance in scaled space
+    # dist^2 = ||x||^2 + ||y||^2 - 2xy^T
+    dist_sq = (np.sum(x_scaled**2, axis=1)[:, None] +
+               np.sum(y_scaled**2, axis=1)[None, :] -
+               2 * np.dot(x_scaled, y_scaled.T))
+    
+    # Numerical stability: ensure no negative values before sqrt
+    dists = np.sqrt(np.maximum(dist_sq, 1e-12))
+    
+    sqrt3 = np.sqrt(3.0)
+    return variance * (1.0 + sqrt3 * dists) * np.exp(-sqrt3 * dists)

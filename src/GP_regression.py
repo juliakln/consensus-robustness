@@ -22,6 +22,7 @@ This provides a smooth probability surface and confidence bounds over the
 parameter space.
 
 Here: analysis of stable consensus wrt. reaching and holding times
+Update: 3-dimensional analysis for good recovery with varying reaching, holding, and recovery times
 """
 
 
@@ -35,6 +36,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import os
 from scipy.optimize import minimize
+from scipy.spatial import cKDTree
+
 
 from GP_kernels import *
 from run_plasmalab import *
@@ -59,9 +62,21 @@ property = "../models/consensus.bltl"
 # use dictionary to choose model function
 model_functions = {
     'voter': stableconsensus_voter,
-    'crossinh': stableconsensus_crossinh
+    'crossinh': stableconsensus_crossinh,
+    'combined': stableconsensus_combined
 }
 
+model_functions_x = {
+    'voter': stableconsensus_voter_x,
+    'crossinh': stableconsensus_crossinh_x,
+    'combined' : stableconsensus_combined_x
+}
+
+model_functions_recgood = {
+    'voter': recoverygood_voter,
+    'crossinh': recoverygood_crossinh,
+    'combined' : recoverygood_combined
+}
 
 # parameters for font sizes in plots
 plt.rcParams.update({
@@ -115,8 +130,8 @@ def gp_regression_posterior(X_train, y_train_latent, X_test, kernel, params, noi
     return f_mean, f_var
 
 
-def calc_mse(x, x_s, f, probs):
-    """ Compute MSE for posterior function of the training data points
+def calc_mse(x_train, x_test, y_train_true, y_test_pred):
+    """ Compute MSE by mapping training points to nearest point in the test grid
     
     Parameters:
         x: Training data input
@@ -127,22 +142,13 @@ def calc_mse(x, x_s, f, probs):
     Returns:  
         mse: Average distance of predictions to true training data output
     """
-    predictions = []
-    if len(x_s[0,:]) == 1:
-        for i in x:
-            idx = np.absolute(x_s - i).argmin()
-            predictions.append(probs[idx])
-
-        mse = np.square(np.subtract(f.reshape(1,-1), predictions)).mean()
-    elif len(x_s[0,:]) == 2:
-        probs = probs.reshape(len(x_s),-1)
-        for i in x:
-            idx = np.absolute(x_s - i).argmin()
-            if idx >= len(x_s):
-                idx = len(x_s) - 1
-            predictions.append(probs[idx])
-        mse = np.square(np.subtract(f.reshape(1,-1), predictions)).mean()
-
+    # Build a tree of the test points for fast lookup
+    tree = cKDTree(x_test)
+    # For every training point, find the index of the closest test point
+    _, indices = tree.query(x_train)
+    
+    predictions_at_train_points = y_test_pred[indices]
+    mse = np.mean(np.square(y_train_true.ravel() - predictions_at_train_points.ravel()))
     return mse
 
 
@@ -182,6 +188,24 @@ def negative_log_marginal_likelihood(params_vec, x, y, kernel, noise_latent=0.00
     
     return -float(log_marg_like)  # negative for minimization
 
+def negative_log_marginal_likelihood_3d(params_vec, x, y, kernel, noise_latent=0.001, jitter=1e-8):
+    # params_vec: [log_var, log_ell1, log_ell2, log_ell3]
+    var = np.exp(params_vec[0])
+    ells = np.exp(params_vec[1:]) # Array of 3 lengthscales
+
+    K = kernel(x, x, {'var': var, 'ell': ells}) + \
+        np.diag(noise_latent.reshape(-1)) + jitter * np.eye(len(x))
+    
+    try:
+        L = np.linalg.cholesky(K)
+    except np.linalg.LinAlgError:
+        return np.inf
+
+    yv = y.reshape(-1)
+    alpha = np.linalg.solve(L.T, np.linalg.solve(L, yv))
+
+    log_marg_like = -0.5 * np.dot(yv, alpha) - np.sum(np.log(np.diag(L))) - 0.5 * len(x) * np.log(2 * np.pi)
+    return -float(log_marg_like)
 
 
 def optimize_hyperparams_gp(x, y, kernel, noise_latent=0.02, var_init=1.0, ell_init=10.0):
@@ -328,8 +352,131 @@ def analyse(modelname, kernel, var, var_bounds, ell, ell_bounds, scale, ptest1, 
     return X_gp, p_hat, p1, p2, probabilities, lower_p, upper_p
     
 
+def analyse_3d(modelname, kernel, var, var_bounds, ell, ell_bounds, scale, 
+               ptest1, ptest2, ptest3, trainingpoints, testpoints, zealots, 
+               paramValueSet=None, paramValueOutput=None):
+    """
+    Analyzes 3 parameters (p1, p2, p3) using GPR.
+    testpoints: Total number of points in the 3D grid (e.g., 1000 for a 10x10x10 cube)
+    """
+    if paramValueSet is None or paramValueOutput is None:
+        # Assuming your data creator can handle 3D inputs
+        paramValueSet, paramValueOutput = create_trainingdata_goodrecovery_reaching_holding_recovery(trainingpoints)
+
+    # 1. Prepare Latent Targets
+    p_hat = np.clip(paramValueOutput.reshape(-1, 1), 1e-6, 1-1e-6)
+    y_latent = norm.ppf(p_hat)
+        
+    # 2. Latent Noise Estimation
+    phi = (1/np.sqrt(2*np.pi)) * np.exp(-0.5 * (y_latent.ravel()**2))
+    var_p = (p_hat.ravel() * (1-p_hat.ravel())) / float(scale)
+    noise_latent = np.clip((1.0 / (phi + 1e-12))**2 * var_p, 1e-12, 0.01)
+
+    # 3. Hyperparameter Optimization (assuming 1 variance, 1 lengthscale for simplicity)
+    res = minimize(
+        negative_log_marginal_likelihood_3d, 
+        x0=np.log([var, ell]), # Adjust x0 size if using ARD
+        args=(paramValueSet, y_latent, kernel, noise_latent), 
+        bounds=[var_bounds, ell_bounds],   
+        method='L-BFGS-B')
+   
+    opt_params = {'var': np.exp(res.x[0]), 'ell': np.exp(res.x[1])}
+
+    # 4. Define 3D Test Set
+    n_per_dim = int(np.round(testpoints**(1/3)))
+    lin1 = np.linspace(ptest1[0], ptest1[1], n_per_dim)
+    lin2 = np.linspace(ptest2[0], ptest2[1], n_per_dim)
+    lin3 = np.linspace(ptest3[0], ptest3[1], n_per_dim)
+    
+    # Create 3D Meshgrid
+    grid = np.meshgrid(lin1, lin2, lin3, indexing='ij')
+    testset = np.stack([g.ravel() for g in grid], axis=-1)
+
+    # 5. GP Prediction
+    f_mean_l, f_var_l = gp_regression_posterior(paramValueSet, y_latent, testset, 
+                                                kernel, opt_params, noise_var=noise_latent)
+
+    # Map back to probabilities
+    prob_mean = norm.cdf(f_mean_l)
+    
+    # Reshape to a 3D volume (n, n, n)
+    probabilities_3d = prob_mean.reshape(n_per_dim, n_per_dim, n_per_dim)
+
+    # 6. Uncertainty (Optional)
+    phi_f = (1/np.sqrt(2*np.pi)) * np.exp(-0.5 * f_mean_l**2)
+    var_p_test = (phi_f**2) * f_var_l
+    
+    return probabilities_3d, testset, opt_params
 
 
+def create_trainingdata_goodrecovery_reaching_holding_recovery(model, N, stubborn_type, stubborn_int, ratex=1.0, ratey=1.0, 
+                           trainingpoints=125, p1_range=[0,20], p2_range=[0,20], p3_range=[0,20], 
+                           trajs=100, plot=False):
+    """
+    Create training data for 3-dimensional input (p1, p2, p3).
+    Note: trainingpoints should ideally be a cubic number (e.g., 125 for a 5x5x5 grid).
+    """
+    # 1. Generate 3D Grid
+    points = int(np.ceil(trainingpoints**(1/3)))  # points per dimension
+    total_points = points**3
+    
+    lin1 = np.linspace(p1_range[0], p1_range[1], points)
+    lin2 = np.linspace(p2_range[0], p2_range[1], points)
+    lin3 = np.linspace(p3_range[0], p3_range[1], points)
+    
+    # Using meshgrid is cleaner for 3D than repeat/tile
+    grid = np.meshgrid(lin1, lin2, lin3, indexing='ij')
+    X = np.stack([g.ravel() for g in grid], axis=-1)
+
+    analyse_fn = model_functions_recgood[model]
+    
+    # 2. Run Simulations
+    satisfactions = []
+    
+    print(f"Simulating {len(X)} points in 3D parameter space...")
+    
+    for params in X:
+        p1, p2, p3 = params
+        
+        # NOTE: Ensure your model_functions[model] is updated to accept p1, p2, p3
+        # Here I am assuming p1=reaching, p2=holding, and p3 is a new parameter
+        result = analyse_fn(
+            stubborn_type=stubborn_type, 
+            N=N, 
+            stubborn_int=stubborn_int, 
+            ratex=ratex, 
+            ratey=ratey, 
+            reaching=int(p1), 
+            holding=int(p2), 
+            recovery=int(p3), 
+            samples=trajs
+        )
+        satisfactions.append(result)
+
+    f = np.array(satisfactions).reshape(-1, 1)
+
+    # 3. Plotting (4D visualization using color for the 4th dimension)
+    if plot:
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Since we can't easily see "inside" a solid cube, 
+        # we plot points and use color for the probability 'f'
+        scat = ax.scatter(X[:, 0], X[:, 1], X[:, 2], c=f.ravel(), 
+                          cmap=cm.coolwarm, vmin=0, vmax=1, s=50, alpha=0.6)
+        
+        ax.set_xlabel('Param 1 (Reaching)')
+        ax.set_ylabel('Param 2 (Holding)')
+        ax.set_zlabel('Param 3 (Recovery)')
+        
+        cbar = fig.colorbar(scat, shrink=0.5, aspect=10)
+        cbar.set_label('Probability', rotation=270, labelpad=15)
+        
+        plt.title(f'3D Training Data: {model} model ({stubborn_int} {stubborn_type})')
+        plt.tight_layout()
+        plt.show()
+
+    return X, f
     
 
 def create_trainingdata_stableconsensus_reaching_holding(model, N, stubborn_type, stubborn_int, ratex=1.0, ratey=1.0, trainingpoints=100, 
@@ -393,6 +540,71 @@ def create_trainingdata_stableconsensus_reaching_holding(model, N, stubborn_type
         plt.close()
 
     return X, f
+
+
+
+def create_trainingdata_goodconsensus_reaching_holding(model, N, stubborn_type, stubborn_int, ratex=1.05, ratey=0.95, trainingpoints=100, 
+                                         p1_range=[0,20], p2_range=[0,20], trajs=100, plot=False):
+    """
+    Create training data for 2-dimensional input
+
+    Args:
+        model: voter or crossinh
+        N: group size
+        stubborn_type: 'z' for zealots, 'c' for contrarians
+        stubborn_int: number of stubborn individuals
+        ratex: rate for opinion x
+        ratey: rate for opinion y
+        trainingpoints: number of training points
+        p1_range: range of parameter 1
+        p2_range: range of parameter 2
+        trajs: number of trajectories per data point
+        plot: whether to plot training data
+    Returns:          
+        paramValueSet: training inputs / parameter values (N,2)
+        paramValueOutput: training outputs / probabilities (N,1)               
+    """
+    points = int(np.ceil(trainingpoints**(1/2)))  # number of points per dimension
+    X = np.zeros((trainingpoints,2))  # create grid of equally spaced input points
+    lin1 = np.linspace(p1_range[0], p1_range[1], points)
+    lin2 = np.linspace(p2_range[0], p2_range[1], points)
+    X[:,0] = np.repeat(lin1, points)
+    X[:,1] = np.tile(lin2, points)
+
+    analyse_fn = model_functions_x[model]
+
+    # save number of satisfactions for each parameter combination
+    satisfactions = defaultdict(list)
+
+    for params in X:
+        reaching = params[0]
+        holding = params[1]
+
+        result = analyse_fn(stubborn_type, N, stubborn_int, ratex, ratey, reaching=int(reaching), holding=int(holding), samples=trajs)
+        satisfactions[(np.round(reaching,3), np.round(holding,3))] = result
+
+
+    # Training data
+    f = []
+    for key in sorted(satisfactions):
+        f.append(satisfactions[key])
+
+    f = np.array(f).reshape(-1,1)
+
+    if plot:
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(12,6))
+        scat = ax.scatter(X[:,0], X[:,1], f, c=f, cmap=cm.coolwarm, vmin=0, vmax=1)
+        ax.set_xlabel('reaching time')
+        ax.set_ylabel('holding time', rotation=0)
+        cbar = fig.colorbar(scat, shrink=0.5)
+        cbar.ax.set_ylabel('probability', rotation=0)
+        ax.set_title(f'Satisfaction probability of stable consensus in {model} model with {str(stubborn_int)} {stubborn_type} stubborns (Training set)')
+        plt.tight_layout()
+        plt.savefig(f'../figures/GP_goodconsensus_reachingholding_{model}_{N}N_{str(ratex).replace('.', 'p')}x_{str(ratey).replace('.', 'p')}y_{stubborn_type}_training.png', dpi=300)
+        plt.close()
+
+    return X, f
+
 
 
 def main():
@@ -470,6 +682,62 @@ def main():
     plt.close(fig)
 
     print("Done.")
+
+
+
+
+    print('-----3D GP VOTER MODEL GOOD RECOVERY-----\n')
+
+    # --- Configuration parameters ---
+    model = "voter"
+    stubborn_type = "z"
+    zealots = 0
+    ratex = 1.05
+    ratey = 0.95
+
+    N = 100     # population size for model
+    trainingpoints = 125  # ideally a cubic number for 3D grid (e.g., 125 for 5x5x5)
+    testpoints = 216 # ideally a cubic number for 3D grid (e.g., 216 for 6x6x6)
+    observations = 1000
+    p1_range = [0, 20] # reaching time
+    p2_range = [0, 20] # holding time
+    p3_range = [0, 20] # recovery time (new parameter for 3D analysis)
+
+    # --- Get training data ---
+    X_train, y_train = create_trainingdata_goodrecovery_reaching_holding_recovery(
+        model,
+        N=N,
+        stubborn_type=stubborn_type,
+        stubborn_int=zealots,
+        ratex=ratex,
+        ratey=ratey,
+        trainingpoints=trainingpoints,
+        p1_range=p1_range,
+        p2_range=p2_range,
+        p3_range=p3_range,
+        trajs=observations,
+        plot=True
+    )
+
+
+    # --- Run GP analysis ---
+    probabilities_3d, testset, opt_params = analyse_3d(
+        modelname=model,
+        kernel=kernel_matern32_3d,
+        var=1.0,
+        var_bounds=(np.log(1e-6), np.log(3.0)),
+        ell=10.0,
+        ell_bounds=(np.log(1), np.log(40.0)),
+        scale=observations,
+        ptest1=p1_range,
+        ptest2=p2_range,
+        ptest3=p3_range,
+        trainingpoints=trainingpoints,
+        testpoints=testpoints,
+        zealots=zealots,
+        paramValueSet=X_train,
+        paramValueOutput=y_train,
+    )
 
 
 if __name__ == "__main__":
