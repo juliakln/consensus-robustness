@@ -370,7 +370,7 @@ def run_recovery(
     # --- directory creation ---
     os.makedirs(f'../SMC_results/{foldername}', exist_ok=True)
     # choose filename according to properties of model and property
-    filename = f'../SMC_results/{foldername}/{N}N_{rx}x_{ry}y_{majority}m{distance}d{reaching}t{holding}h_{stubborn_int}{stubborn_type}.txt'
+    filename = f'../SMC_results/{foldername}/{N}N_{rx}x_{ry}y_{majority}m{distance}d{reaching}t{holding}h{recovery}r_{stubborn_int}{stubborn_type}.txt'
 
     if not os.path.exists(filename):
 
@@ -397,7 +397,10 @@ def run_recovery(
     return float(prob.split('\n')[0])
 
 
-def recovery_voter(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def recovery_voter(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -414,7 +417,10 @@ def recovery_voter(stubborn_type, N, majority, distance, reaching, holding, reco
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def recovery_crossinh(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def recovery_crossinh(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -431,7 +437,10 @@ def recovery_crossinh(stubborn_type, N, majority, distance, reaching, holding, r
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def recoverygood_voter(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def recoverygood_voter(stubborn_type, N, recovery=10, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -448,7 +457,10 @@ def recoverygood_voter(stubborn_type, N, majority, distance, reaching, holding, 
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def recoverygood_crossinh(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def recoverygood_crossinh(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -465,7 +477,10 @@ def recoverygood_crossinh(stubborn_type, N, majority, distance, reaching, holdin
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def recoverygood_combined(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def recoverygood_combined(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -482,7 +497,10 @@ def recoverygood_combined(stubborn_type, N, majority, distance, reaching, holdin
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def consensusandrecovery_voter(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecovery_voter(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -499,7 +517,10 @@ def consensusandrecovery_voter(stubborn_type, N, majority, distance, reaching, h
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def consensusandrecovery_crossinh(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecovery_crossinh(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -516,7 +537,10 @@ def consensusandrecovery_crossinh(stubborn_type, N, majority, distance, reaching
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def consensusandrecovery_combined(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecovery_combined(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -534,7 +558,10 @@ def consensusandrecovery_combined(stubborn_type, N, majority, distance, reaching
     )
 
 
-def consensusandrecoverygood_voter(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecoverygood_voter(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -551,7 +578,10 @@ def consensusandrecoverygood_voter(stubborn_type, N, majority, distance, reachin
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def consensusandrecoverygood_crossinh(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecoverygood_crossinh(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,
@@ -568,7 +598,10 @@ def consensusandrecoverygood_crossinh(stubborn_type, N, majority, distance, reac
         extra_args={"ratex": ratex, "ratey": ratey}
     )
 
-def consensusandrecoverygood_combined(stubborn_type, N, majority, distance, reaching, holding, recovery, stubborn_int, samples, ratex=1.05, ratey=0.95):
+def consensusandrecoverygood_combined(stubborn_type, N, recovery, majority=50, distance=None, reaching=10, holding=50, stubborn_int=0, samples=4239, ratex=1.05, ratey=0.95):
+    if distance is None:
+        distance = int(N/10)
+    
     return run_recovery(
         stubborn_type,
         N,

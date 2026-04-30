@@ -330,12 +330,28 @@ def write_combined_model(stubborn, N, init, ratex = 1.0, ratey = 1.0):
                 [votery4]   (x>0) & (y>0) & (y<N)  -> x*y : (x'=x-1) & (y'=y+1);  // x+y -> y+y
                 [voterx5]   (x>0) & (y>0) & (x<N)  -> x*y : (x'=x+1) & (y'=y-1);  // x+y -> x+x
                 [votery5]   (x>0) & (y>0) & (y<N)  -> x*y : (x'=x-1) & (y'=y+1);  // x+y -> y+y
+
+                [zealotx]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
+                [zealotx2]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty2]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
+                [zealotx3]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty3]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
+                [zealotx4]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty4]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
+                [zealotx5]    (y>0) & (x<N) & (Zx>0) -> y*Zx : (y'=y-1) & (x'=x+1);		// y+Zx -> x+Zx
+                [zealoty5]    (x>0) & (y<N) & (Zy>0)	-> x*Zy : (x'=x-1) & (y'=y+1);		// x+Zy -> y+Zy
                  
                 [cix] 	   (x>0) & (y>0) & (u<N) -> x*y : (x'=x) & (y'=y-1) & (u'=u+1); // x+y -> x+u
                 [ciy] 	   (x>0) & (y>0) & (u<N) -> x*y : (x'=x-1) & (y'=y) & (u'=u+1); // x+y -> y+u
 
                 [rx] 	   (x>0) & (x<N) & (u>0) -> x*u : (x'=x+1) & (u'=u-1);  	// u+x -> 2x 
                 [ry]       (y>0) & (y<N) & (u>0) -> y*u : (y'=y+1) & (u'=u-1);	// u+y -> 2y
+
+                [zeaxa]    (y>0) & (u<N)	 -> y*Zx : (y'=y-1) & (u'=u+1);		// y+Zx -> u+Zx
+                [zeaxb]    (u>0) & (x<N)	 -> u*Zx : (x'=x+1) & (u'=u-1);		// u+Zx -> x+Zx
+                [zeaya]    (x>0) & (u<N)	 -> x*Zy : (x'=x-1) & (u'=u+1);		// x+Zy -> u+Zy
+                [zeayb]    (u>0) & (y<N)	 -> u*Zy : (y'=y+1) & (u'=u-1);		// u+Zy -> y+Zy
 
                 [deadx] (x=0) -> (x'=x);                
                 [deady] (y=0) -> (y'=y);
@@ -361,10 +377,24 @@ def write_combined_model(stubborn, N, init, ratex = 1.0, ratey = 1.0):
                 [votery3] true -> qy : true;
                 [votery4] true -> qy : true;
                 [votery5] true -> qy : true;
+                [zealotx] true -> qx : true;	
+                [zealoty] true -> qy : true;
+                [zealotx2] true -> qx : true;	
+                [zealoty2] true -> qy : true;
+                [zealotx3] true -> qx : true;	
+                [zealoty3] true -> qy : true;
+                [zealotx4] true -> qx : true;	
+                [zealoty4] true -> qy : true;
+                [zealotx5] true -> qx : true;	
+                [zealoty5] true -> qy : true;
                 [cix] true -> cx : true;
                 [ciy] true -> cy : true;
                 [rx] true -> cx : true;
                 [ry] true -> cy : true;
+                [zeaxa] true -> qx : true;	
+                [zeaxb] true -> qx : true;
+                [zeaya] true -> qy : true;
+                [zeayb] true -> qy : true;
 
             endmodule""")
     else:

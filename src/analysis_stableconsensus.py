@@ -402,6 +402,60 @@ def analyse_stableconsensus_XY_stubborns_groupsizes(model, group_sizes, stubborn
 
 
 
+"""
+Analyse good consensus of X wrt. reaching time 
+    model: 'voter' or 'crossinh' or 'combined'
+    N: total group size
+    stubborn_type: z (zealots), c (contrarians)
+    ratex: rate for opinion x
+    ratey: rate for opinion y
+
+    Return: probabilities for results_x, results_y
+"""
+def analyse_stableconsensus_XY_stubborns(model, N = 100, stubborn_type = 'z', ratex = 1.0, ratey = 1.0, plot = False, **kwargs):
+
+    # compute time for analysis
+    start_time = time.time()
+
+    # select function according to model
+    try:
+        analyse_fn_x = model_functions_x[model]
+        analyse_fn_y = model_functions_y[model]
+    except KeyError:
+        raise ValueError(f"Unknown model '{model}'")
+
+    # range of stubborn individuals for which the probability is evaluated
+    stubborn_range = compute_range(N = N, fraction = 0.7)
+
+    results_x, results_y = [], []
+
+    # compute satisfaction probability for all amounts of stubborns
+    for stubborn in stubborn_range:
+
+        results_x.append(analyse_fn_x(stubborn_type, N, stubborn_int = stubborn, ratex = ratex, ratey = ratey, **kwargs))
+        results_y.append(analyse_fn_y(stubborn_type, N, stubborn_int = stubborn, ratex = ratex, ratey = ratey, **kwargs))
+
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
+
+    if plot:
+        # plot results
+        fig = plt.figure(figsize=(6,6))
+        stubborns = [100 * s / N for s in stubborn_range]
+        plt.plot(stubborns, results_x, 'r', linewidth = 1.5, label = 'X')
+        plt.plot(stubborns, results_y, 'b', linewidth = 1.5, label = 'Y')
+        plt.ylim(0,1)
+        plt.xlabel(f'Percentage of {dict_stubborns[stubborn_type]} in the group')
+        plt.ylabel("Satisfaction probability")
+        plt.legend()
+        fig.savefig(f"../figures/consensus_xy_{model}_{N}N_{str(ratex).replace('.', 'p')}x_{str(ratey).replace('.', 'p')}y_{stubborn_type}.png")
+        plt.close()
+
+    return results_x, results_y 
+
+
 
 def main():
     # analyse probability to reach a stable consensus wrt amount of stubborns for different consensus parameters
