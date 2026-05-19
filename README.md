@@ -57,8 +57,8 @@ export PRISM_PATH=/path/to/prism
 
 ## Running Plasmalab
 
-Navigate to demos folder: *cd 'plasmalab-1.4.5-SNAPSHOT/demos*  
-Launch Plasmalab GUI: *../plasmagui.sh launch*
+Navigate to a project in demos folder, e.g.: *cd 'plasmalab-1.4.5-SNAPSHOT/demos/Broadcast_Protocol*  
+Launch Plasmalab GUI: *../../plasmagui.sh launch*
 
 
 # Expected time analysis in PRISM
