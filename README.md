@@ -10,11 +10,11 @@ Expected times are computed using PRISM.
 
 **Published results:**  
 
-[Quantifying consensus in stochastic swarms with disruptive individuals](https://ieeexplore.ieee.org/abstract/document/11186823/)  
+[1] [Quantifying consensus in stochastic swarms with disruptive individuals](https://ieeexplore.ieee.org/abstract/document/11186823/)  
 Julia Klein and Tatjana Petrov  
 *European Control Conference (ECC)*, 272-277, 2025. 
 
-[Exploring Consensus Robustness in Swarms with Disruptive Individuals](https://link.springer.com/chapter/10.1007/978-3-031-75107-3_3)  
+[2] [Exploring Consensus Robustness in Swarms with Disruptive Individuals](https://link.springer.com/chapter/10.1007/978-3-031-75107-3_3)  
 Julia Klein, Alberto d’Onofrio, and Tatjana Petrov  
 *International Symposium on Leveraging Applications of Formal Methods*, 33-48, 2024.
 
@@ -48,6 +48,10 @@ Python scripts for analyses:
 
 # Setup
 
+## Install Software
+You need [Plasmalab](https://project.inria.fr/plasma-lab/), [PRISM 4.7](https://www.prismmodelchecker.org), and [Python 3.9.7](https://www.python.org/downloads/release/python-397/). 
+
+
 ## Configure Plasmalab and PRISM paths
 You must specify where Plasmalab and PRISM are installed:
 
@@ -59,6 +63,24 @@ export PRISM_PATH=/path/to/prism
 
 Navigate to a project in demos folder, e.g.: *cd 'plasmalab-1.4.5-SNAPSHOT/demos/Broadcast_Protocol*  
 Launch Plasmalab GUI: *../../plasmagui.sh launch*
+
+
+# How to run the analyses
+
+## Default values
+
+Some principle values and consensus parameters do not need to be specified for each experiment. Their default values correspond to:  
+Number of Monte Carlo simulations: samples = 4239  
+Population size: N = 100
+Majority that commits to the same decision: majority = 50
+Distance between both options: distance = N/10 
+Reaching time: reaching = 35
+Holding time: holding = 40
+Recovery time: recovery = 5
+
+## Run analyses
+
+Run the shell script *src/run_stableconsensus.sh* for all analyses regarding reaching a stable consensus. It contains example analyses and the analyses in [2]. 
 
 
 # Expected time analysis in PRISM
