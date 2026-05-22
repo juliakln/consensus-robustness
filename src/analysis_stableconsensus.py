@@ -20,6 +20,7 @@ Resulting plots are saved in figures/
 
 """
 
+import argparse
 import os
 import matplotlib.pyplot as plt
 import time
@@ -456,20 +457,238 @@ def analyse_stableconsensus_XY_stubborns(model, N = 100, stubborn_type = 'z', ra
     return results_x, results_y 
 
 
-
+""" CLI to run all analyses and generate all plots"""
 def main():
-    # analyse probability to reach a stable consensus wrt amount of stubborns for different consensus parameters
-    analyse_stableconsensus_stubborns_parameters(model = 'voter', N = 100, stubborn_type = 'z', ratex = 1.0, ratey = 1.0)
-    # analyse probability to reach a stable consensus wrt amount of stubborns for different group sizes
-    analyse_stableconsensus_stubborns_groupsizes(model = 'voter', group_sizes = [20, 50, 100, 1000, 4000], stubborn_type = 'z', ratex = 1.0, ratey = 1.0)
-    # analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns
-    analyse_stableconsensus_XY_stubborns(model = 'voter', N = 100, stubborn_type = 'z', ratex = 1.05, ratey = 0.95)
-    # analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns for different rate combinations
-    rate_pairs = [(1.0, 1.0), (1.01, 0.99), (1.05, 0.95), (1.1, 0.9)]
-    analyse_stableconsensus_XY_stubborns_rates(model = 'voter', N = 100, stubborn_type = 'z', rate_pairs = rate_pairs)
-    # analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns for different group sizes
-    group_sizes = [20, 50, 100, 1000, 4000]
-    analyse_stableconsensus_XY_stubborns_groupsizes(model = 'voter', group_sizes = group_sizes, stubborn_type = 'z', ratex = 1.05, ratey = 0.95)
+
+    parser = argparse.ArgumentParser(
+        description="Robustness analysis of stable consensus"
+    )
+
+    subparsers = parser.add_subparsers(
+        dest="analysis",
+        required=True
+    )
+
+    ### analyse probability to reach a stable consensus wrt amount of stubborns for different consensus parameters
+    parser_params = subparsers.add_parser(
+        "stubborns_parameters",
+        help="Analyse stable consensus for different consensus parameters"
+    )
+
+    parser_params.add_argument(
+        "--model",
+        choices=["voter", "crossinh"],
+        required=True
+    )
+
+    parser_params.add_argument("--N", type=int, default=100)
+
+    parser_params.add_argument(
+        "--stubborn_type",
+        choices=["z", "c"],
+        default="z"
+    )
+
+    parser_params.add_argument("--ratex", type=float, default=1.0)
+    parser_params.add_argument("--ratey", type=float, default=1.0)
+
+    parser_params.add_argument(
+        "--plot",
+        action="store_true"
+    )
+
+
+    ### analyse probability to reach a stable consensus wrt amount of stubborns for different group sizes
+    parser_groups = subparsers.add_parser(
+        "stubborns_groupsizes",
+        help="Analyse stable consensus for different group sizes"
+    )
+
+    parser_groups.add_argument(
+        "--model",
+        choices=["voter", "crossinh"],
+        required=True
+    )
+
+    parser_groups.add_argument(
+        "--group_sizes",
+        nargs="+",
+        type=int,
+        required=True
+    )
+
+    parser_groups.add_argument(
+        "--stubborn_type",
+        choices=["z", "c"],
+        default="z"
+    )
+
+    parser_groups.add_argument("--ratex", type=float, default=1.0)
+    parser_groups.add_argument("--ratey", type=float, default=1.0)
+
+    parser_groups.add_argument(
+        "--plot",
+        action="store_true"
+    )
+
+
+    ### analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns
+    parser_xy = subparsers.add_parser(
+        "xy_stubborns",
+        help="Analyse stable consensus of X and Y separately"
+    )
+
+    parser_xy.add_argument(
+        "--model",
+        choices=["voter", "crossinh"],
+        required=True
+    )
+
+    parser_xy.add_argument("--N", type=int, default=100)
+
+    parser_xy.add_argument(
+        "--stubborn_type",
+        choices=["z", "c"],
+        default="z"
+    )
+
+    parser_xy.add_argument("--ratex", type=float, default=1.0)
+    parser_xy.add_argument("--ratey", type=float, default=1.0)
+
+    parser_xy.add_argument(
+        "--plot",
+        action="store_true"
+    )
+
+    ### analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns for different rate combinations
+    parser_rates = subparsers.add_parser(
+        "xy_stubborns_rates",
+        help="Analyse stable consensus for different rate combinations"
+    )
+
+    parser_rates.add_argument(
+        "--model",
+        choices=["voter", "crossinh"],
+        required=True
+    )
+
+    parser_rates.add_argument("--N", type=int, default=100)
+
+    parser_rates.add_argument(
+        "--stubborn_type",
+        choices=["z", "c"],
+        default="z"
+    )
+
+    parser_rates.add_argument(
+        "--rate_pairs",
+        nargs="+",
+        required=True,
+        help="Pairs in form qx,qy e.g. 1.0,1.0 1.05,0.95"
+    )
+
+    parser_rates.add_argument(
+        "--plot",
+        action="store_true"
+    )
+
+    ### analyse probability to reach a stable consensus for X and Y separately wrt amount of stubborns for different group sizes
+    parser_xy_groups = subparsers.add_parser(
+        "xy_stubborns_groupsizes",
+        help="Analyse X/Y stable consensus for different group sizes"
+    )
+
+    parser_xy_groups.add_argument(
+        "--model",
+        choices=["voter", "crossinh"],
+        required=True
+    )
+
+    parser_xy_groups.add_argument(
+        "--group_sizes",
+        nargs="+",
+        type=int,
+        required=True
+    )
+
+    parser_xy_groups.add_argument(
+        "--stubborn_type",
+        choices=["z", "c"],
+        default="z"
+    )
+
+    parser_xy_groups.add_argument("--ratex", type=float, default=1.0)
+    parser_xy_groups.add_argument("--ratey", type=float, default=1.0)
+
+    parser_xy_groups.add_argument(
+        "--plot",
+        action="store_true"
+    )
+
+
+    """ parse arguments and call corresponding analysis function"""
+    args = parser.parse_args()
+
+    if args.analysis == "stubborns_parameters":
+
+        analyse_stableconsensus_stubborns_parameters(
+            model=args.model,
+            N=args.N,
+            stubborn_type=args.stubborn_type,
+            ratex=args.ratex,
+            ratey=args.ratey,
+            plot=args.plot
+        )
+
+    elif args.analysis == "stubborns_groupsizes":
+
+        analyse_stableconsensus_stubborns_groupsizes(
+            model=args.model,
+            group_sizes=args.group_sizes,
+            stubborn_type=args.stubborn_type,
+            ratex=args.ratex,
+            ratey=args.ratey,
+            plot=args.plot
+        )
+
+    elif args.analysis == "xy_stubborns":
+
+        analyse_stableconsensus_XY_stubborns(
+            model=args.model,
+            N=args.N,
+            stubborn_type=args.stubborn_type,
+            ratex=args.ratex,
+            ratey=args.ratey,
+            plot=args.plot
+        )
+
+    elif args.analysis == "xy_stubborns_rates":
+
+        rate_pairs = []
+
+        for pair in args.rate_pairs:
+            qx, qy = pair.split(",")
+            rate_pairs.append((float(qx), float(qy)))
+
+        analyse_stableconsensus_XY_stubborns_rates(
+            model=args.model,
+            N=args.N,
+            stubborn_type=args.stubborn_type,
+            rate_pairs=rate_pairs,
+            plot=args.plot
+        )
+
+    elif args.analysis == "xy_stubborns_groupsizes":
+
+        analyse_stableconsensus_XY_stubborns_groupsizes(
+            model=args.model,
+            group_sizes=args.group_sizes,
+            stubborn_type=args.stubborn_type,
+            ratex=args.ratex,
+            ratey=args.ratey,
+            plot=args.plot
+        )
+
 
 
 if __name__ == "__main__":
