@@ -10,6 +10,10 @@ Expected times are computed using PRISM.
 
 **Published results:**  
 
+[0] Collective decision-making under timing constraints  
+Julia Klein and Tatjana Petrov  
+Accepted at *QEST*, 2026.  
+
 [1] [Quantifying consensus in stochastic swarms with disruptive individuals](https://ieeexplore.ieee.org/abstract/document/11186823/)  
 Julia Klein and Tatjana Petrov  
 *European Control Conference (ECC)*, 272-277, 2025. 
